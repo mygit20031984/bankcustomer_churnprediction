@@ -84,4 +84,14 @@ df_train = df_train[['Exited'] + continuous_vars + cat_vars]
 where the attribute in inapplicable instead of 0'''
 df_train.loc[df_train.HasCrCard == 0, 'HasCrCard'] = -1
 df_train.loc[df_train.IsActiveMember == 0, 'IsActiveMember'] = -1
+
+# One hot encode the categorical variables
+lst = ['Geography', 'Gender']
+remove = list()
+for i in lst:
+    if (df_train[i].dtype == np.str or df_train[i].dtype == np.object):
+        for j in df_train[i].unique():
+            df_train[i+'_'+j] = np.where(df_train[i] == j,1,-1)
+        remove.append(i)
+df_train = df_train.drop(remove, axis=1)
 print(df_train.head())
