@@ -58,18 +58,30 @@ df_test = df.drop(df_train.index)
 print(len(df_train))
 print(len(df_test))
 ##############################################################################
-# df_train['BalanceSalaryRatio'] = df_train.Balance/df_train.EstimatedSalary
-# sns.boxplot(y='BalanceSalaryRatio',x = 'Exited', hue = 'Exited',data = df_train)
+df_train['BalanceSalaryRatio'] = df_train.Balance/df_train.EstimatedSalary
+sns.boxplot(y='BalanceSalaryRatio',x = 'Exited', hue = 'Exited',data = df_train)
 # plt.ylim(-1, 5)
 # plt.show()
 ##############################################################################
 # Given that tenure is a 'function' of age, we introduce a variable aiming to standardize tenure over age:
-# df_train['TenureByAge'] = df_train.Tenure/(df_train.Age)
-# sns.boxplot(y='TenureByAge',x = 'Exited', hue = 'Exited',data = df_train)
+df_train['TenureByAge'] = df_train.Tenure/(df_train.Age)
+sns.boxplot(y='TenureByAge',x = 'Exited', hue = 'Exited',data = df_train)
 # plt.ylim(-1, 1)
 # plt.show()
 
 '''Lastly we introduce a variable to capture credit score given age to take into account credit behaviour visavis adult life
 :-)'''
 df_train['CreditScoreGivenAge'] = df_train.CreditScore/(df_train.Age)
+#print(df_train.head())
+##############################################################################
+# Arrange columns by data type for easier manipulation
+continuous_vars = ['CreditScore',  'Age', 'Tenure', 'Balance','NumOfProducts', 'EstimatedSalary', 'BalanceSalaryRatio',
+                   'TenureByAge','CreditScoreGivenAge']
+cat_vars = ['HasCrCard', 'IsActiveMember','Geography', 'Gender']
+df_train = df_train[['Exited'] + continuous_vars + cat_vars]
+
+'''For the one hot variables, we change 0 to -1 so that the models can capture a negative relation 
+where the attribute in inapplicable instead of 0'''
+df_train.loc[df_train.HasCrCard == 0, 'HasCrCard'] = -1
+df_train.loc[df_train.IsActiveMember == 0, 'IsActiveMember'] = -1
 print(df_train.head())
