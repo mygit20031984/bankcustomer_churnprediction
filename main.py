@@ -121,8 +121,11 @@ def get_auc_scores(y_actual, method,method2):
     auc_score = roc_auc_score(y_actual, method);
     fpr_df, tpr_df, _ = roc_curve(y_actual, method2);
     return (auc_score, fpr_df, tpr_df)
-
-
+#########################################################################################
+#########################################################################################
+#########################################################################################
+#########################################################################################
+#########################################################################################
 # # Fit primal logistic regression
 # param_grid = {'C': [0.1,0.5,1,10,50,100], 'max_iter': [250], 'fit_intercept':[True],'intercept_scaling':[1],
 #               'penalty':['l2'], 'tol':[0.00001,0.0001,0.000001]}
@@ -144,7 +147,38 @@ def get_auc_scores(y_actual, method,method2):
 # SVM_grid.fit(df_train.loc[:, df_train.columns != 'Exited'],df_train.Exited)
 # best_model(SVM_grid)
 # Fit SVM with pol kernel
-param_grid = {'C': [0.5,1,10,50,100], 'gamma': [0.1,0.01,0.001],'probability':[True],'kernel': ['poly'],'degree':[2,3] }
-SVM_grid = GridSearchCV(SVC(), param_grid, cv=3, refit=True, verbose=0)
-SVM_grid.fit(df_train.loc[:, df_train.columns != 'Exited'],df_train.Exited)
-best_model(SVM_grid)
+# param_grid = {'C': [0.5,1,10,50,100], 'gamma': [0.1,0.01,0.001],'probability':[True],'kernel': ['poly'],'degree':[2,3] }
+# SVM_grid = GridSearchCV(SVC(), param_grid, cv=3, refit=True, verbose=0)
+# SVM_grid.fit(df_train.loc[:, df_train.columns != 'Exited'],df_train.Exited)
+# best_model(SVM_grid)
+# Fit random forest classifier
+# param_grid = {'max_depth': [3, 5, 6, 7, 8], 'max_features': [2,4,6,7,8,9],'n_estimators':[50,100],'min_samples_split': [3, 5, 6, 7]}
+# RanFor_grid = GridSearchCV(RandomForestClassifier(), param_grid, cv=5, refit=True, verbose=0)
+# RanFor_grid.fit(df_train.loc[:, df_train.columns != 'Exited'],df_train.Exited)
+# best_model(RanFor_grid)
+# Fit Extreme Gradient boosting classifier
+# param_grid = {'max_depth': [5,6,7,8], 'gamma': [0.01,0.001,0.001],'min_child_weight':[1,5,10], 'learning_rate': [0.05,0.1, 0.2, 0.3], 'n_estimators':[5,10,20,100]}
+# xgb_grid = GridSearchCV(XGBClassifier(), param_grid, cv=5, refit=True, verbose=0)
+# xgb_grid.fit(df_train.loc[:, df_train.columns != 'Exited'],df_train.Exited)
+# best_model(xgb_grid)
+#########################################################################################
+#########################################################################################
+#########################################################################################
+#########################################################################################
+#########################################################################################
+#Fit Best Model
+# Fit logistic regression with degree 2 polynomial kernel
+# param_grid = {'C': [0.1,10,50], 'max_iter': [300,500], 'fit_intercept':[True],'intercept_scaling':[1],'penalty':['l2'],
+#               'tol':[0.0001,0.000001]}
+# poly2 = PolynomialFeatures(degree=2)
+# df_train_pol2 = poly2.fit_transform(df_train.loc[:, df_train.columns != 'Exited'])
+# log_pol2_Grid = GridSearchCV(LogisticRegression(solver = 'liblinear'),param_grid, cv=5, refit=True, verbose=0)
+# log_pol2_Grid.fit(df_train_pol2,df_train.Exited)
+# best_model(log_pol2_Grid)
+
+# Fit logistic regression with pol 2 kernel
+poly2 = PolynomialFeatures(degree=2)
+df_train_pol2 = poly2.fit_transform(df_train.loc[:, df_train.columns != 'Exited'])
+log_pol2 = LogisticRegression(C=10, class_weight=None, dual=False, fit_intercept=True,intercept_scaling=1, max_iter=300, multi_class='auto', n_jobs=None,
+                              penalty='l2', random_state=None, solver='liblinear',tol=0.0001, verbose=0, warm_start=False)
+log_pol2.fit(df_train_pol2,df_train.Exited)
