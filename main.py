@@ -32,9 +32,9 @@ df = df.drop(["RowNumber", "CustomerId", "Surname"], axis = 1)
 # ax1.pie(sizes, explode=explode, labels=labels, autopct='%1.1f%%', shadow=True, startangle=90)
 # ax1.axis('equal')
 # plt.title("Proportion of customer churned and retained", size = 20)
-#plt.show()
+# plt.show()
 ##############################################################################
-# We first review the 'Status' relation with categorical variables
+# # We first review the 'Status' relation with categorical variables
 # fig, axarr = plt.subplots(2, 2, figsize=(20, 12))
 # sns.countplot(x='Geography', hue='Exited', data=df, ax=axarr[0][0])
 # sns.countplot(x='Gender', hue='Exited', data=df, ax=axarr[0][1])
@@ -50,41 +50,34 @@ df = df.drop(["RowNumber", "CustomerId", "Surname"], axis = 1)
 # sns.boxplot(y='Balance', x='Exited', hue='Exited', data=df, ax=axarr[1][1])
 # sns.boxplot(y='NumOfProducts', x='Exited', hue='Exited', data=df, ax=axarr[2][0])
 # sns.boxplot(y='EstimatedSalary', x='Exited', hue='Exited', data=df, ax=axarr[2][1])
-# plt.show()
 ##############################################################################
 # Split Train, test data
 df_train = df.sample(frac=0.8,random_state=200)
 df_test = df.drop(df_train.index)
 print(len(df_train))
 print(len(df_test))
-##############################################################################
+# ##############################################################################
 df_train['BalanceSalaryRatio'] = df_train.Balance/df_train.EstimatedSalary
-sns.boxplot(y='BalanceSalaryRatio',x = 'Exited', hue = 'Exited',data = df_train)
-# plt.ylim(-1, 5)
-# plt.show()
-##############################################################################
+#sns.boxplot(y='BalanceSalaryRatio',x = 'Exited', hue = 'Exited',data = df_train)
+#plt.ylim(-1, 5)
+################################################################################
 # Given that tenure is a 'function' of age, we introduce a variable aiming to standardize tenure over age:
 df_train['TenureByAge'] = df_train.Tenure/(df_train.Age)
-sns.boxplot(y='TenureByAge',x = 'Exited', hue = 'Exited',data = df_train)
+# sns.boxplot(y='TenureByAge',x = 'Exited', hue = 'Exited',data = df_train)
 # plt.ylim(-1, 1)
 # plt.show()
-
-'''Lastly we introduce a variable to capture credit score given age to take into account credit behaviour visavis adult life
-:-)'''
+################################################################################
+#'''Lastly we introduce a variable to capture credit score given age to take into account credit behaviour visavis adult life :-)'''
 df_train['CreditScoreGivenAge'] = df_train.CreditScore/(df_train.Age)
-#print(df_train.head())
-##############################################################################
-# Arrange columns by data type for easier manipulation
+# Resulting Data Frame
 continuous_vars = ['CreditScore',  'Age', 'Tenure', 'Balance','NumOfProducts', 'EstimatedSalary', 'BalanceSalaryRatio',
                    'TenureByAge','CreditScoreGivenAge']
 cat_vars = ['HasCrCard', 'IsActiveMember','Geography', 'Gender']
 df_train = df_train[['Exited'] + continuous_vars + cat_vars]
-
 '''For the one hot variables, we change 0 to -1 so that the models can capture a negative relation 
 where the attribute in inapplicable instead of 0'''
 df_train.loc[df_train.HasCrCard == 0, 'HasCrCard'] = -1
 df_train.loc[df_train.IsActiveMember == 0, 'IsActiveMember'] = -1
-
 # One hot encode the categorical variables
 lst = ['Geography', 'Gender']
 remove = list()
@@ -94,4 +87,64 @@ for i in lst:
             df_train[i+'_'+j] = np.where(df_train[i] == j,1,-1)
         remove.append(i)
 df_train = df_train.drop(remove, axis=1)
-print(df_train.head())
+# minMax scaling the continuous variables
+minVec = df_train[continuous_vars].min().copy()
+maxVec = df_train[continuous_vars].max().copy()
+df_train[continuous_vars] = (df_train[continuous_vars]-minVec)/(maxVec-minVec)
+################################################################################
+################################################################################
+################################################################################
+# Support functions
+from sklearn.preprocessing import PolynomialFeatures
+from sklearn.model_selection import cross_val_score
+from sklearn.model_selection import GridSearchCV
+from scipy.stats import uniform
+
+# Fit models
+from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
+from sklearn.ensemble import RandomForestClassifier
+from xgboost import XGBClassifier
+
+# Scoring functions
+from sklearn.metrics import accuracy_score
+from sklearn.metrics import classification_report
+from sklearn.metrics import roc_auc_score
+from sklearn.metrics import roc_curve
+
+# Function to give best model score and parameters
+def best_model(model):
+    print(model.best_score_)
+    print(model.best_params_)
+    print(model.best_estimator_)
+def get_auc_scores(y_actual, method,method2):
+    auc_score = roc_auc_score(y_actual, method);
+    fpr_df, tpr_df, _ = roc_curve(y_actual, method2);
+    return (auc_score, fpr_df, tpr_df)
+
+
+# # Fit primal logistic regression
+# param_grid = {'C': [0.1,0.5,1,10,50,100], 'max_iter': [250], 'fit_intercept':[True],'intercept_scaling':[1],
+#               'penalty':['l2'], 'tol':[0.00001,0.0001,0.000001]}
+# log_primal_Grid = GridSearchCV(LogisticRegression(solver='lbfgs'),param_grid, cv=10, refit=True, verbose=0)
+# log_primal_Grid.fit(df_train.loc[:, df_train.columns != 'Exited'],df_train.Exited)
+# best_model(log_primal_Grid)
+#
+# # Fit logistic regression with degree 2 polynomial kernel
+# param_grid = {'C': [0.1,10,50], 'max_iter': [300,500], 'fit_intercept':[True],'intercept_scaling':[1],'penalty':['l2'],
+#               'tol':[0.0001,0.000001]}
+# poly2 = PolynomialFeatures(degree=2)
+# df_train_pol2 = poly2.fit_transform(df_train.loc[:, df_train.columns != 'Exited'])
+# log_pol2_Grid = GridSearchCV(LogisticRegression(solver = 'liblinear'),param_grid, cv=5, refit=True, verbose=0)
+# log_pol2_Grid.fit(df_train_pol2,df_train.Exited)
+# best_model(log_pol2_Grid)
+# Fit SVM with RBF Kernel
+# param_grid = {'C': [0.5,100,150], 'gamma': [0.1,0.01,0.001],'probability':[True],'kernel': ['rbf']}
+# SVM_grid = GridSearchCV(SVC(), param_grid, cv=3, refit=True, verbose=0)
+# SVM_grid.fit(df_train.loc[:, df_train.columns != 'Exited'],df_train.Exited)
+# best_model(SVM_grid)
+# Fit SVM with pol kernel
+param_grid = {'C': [0.5,1,10,50,100], 'gamma': [0.1,0.01,0.001],'probability':[True],'kernel': ['poly'],'degree':[2,3] }
+SVM_grid = GridSearchCV(SVC(), param_grid, cv=3, refit=True, verbose=0)
+SVM_grid.fit(df_train.loc[:, df_train.columns != 'Exited'],df_train.Exited)
+best_model(SVM_grid)
